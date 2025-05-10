@@ -1,4 +1,4 @@
-package com.karebet.smarthome
+package com.karebet.smarthome.model
 
 import androidx.lifecycle.ViewModel
 import com.google.firebase.database.DataSnapshot
@@ -23,7 +23,8 @@ class RelayViewModel : ViewModel() {
     private val _offTime = MutableStateFlow("")
     val offTime = _offTime.asStateFlow()
 
-
+    private val _scheduleRelays = MutableStateFlow<Map<String, Boolean>>(emptyMap())
+    val scheduleRelays = _scheduleRelays.asStateFlow()
 
     init {
         db.child("relay").addValueEventListener(object : ValueEventListener {
@@ -41,6 +42,11 @@ class RelayViewModel : ViewModel() {
                 _scheduleEnabled.value = snapshot.child("enabled").getValue(Boolean::class.java) ?: false
                 _onTime.value = snapshot.child("onTime").getValue(String::class.java) ?: ""
                 _offTime.value = snapshot.child("offTime").getValue(String::class.java) ?: ""
+
+                val scheduledRelays = snapshot.children
+                    .filter { it.key?.startsWith("relay") == true }
+                    .associate { it.key!! to (it.getValue(Boolean::class.java) ?: false) }
+                _scheduleRelays.value = scheduledRelays
             }
             override fun onCancelled(error: DatabaseError) {}
         })
@@ -63,8 +69,12 @@ class RelayViewModel : ViewModel() {
     fun setOnTime(time: String) {
         db.child("schedule/onTime").setValue(time)
     }
+
     fun setOffTime(time: String) {
         db.child("schedule/offTime").setValue(time)
     }
-}
 
+    fun setRelayScheduled(key: String, enabled: Boolean) {
+        db.child("schedule/$key").setValue(enabled)
+    }
+}

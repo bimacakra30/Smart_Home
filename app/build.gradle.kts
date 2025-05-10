@@ -51,6 +51,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.firebase.database)
+    implementation(libs.google.firebase.auth.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -62,5 +63,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.material.icons.extended)
     implementation(libs.material3)
+    implementation(libs.firebase.auth.ktx)
+    implementation(libs.play.services.auth)
 
 }
