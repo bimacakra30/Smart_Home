@@ -1,14 +1,9 @@
 package com.karebet.smarthome.screen
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,8 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bathroom
@@ -57,9 +50,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
@@ -72,7 +63,6 @@ import com.karebet.smarthome.model.RelayViewModel
 //  Color & Theme Definitions - Synchronized with ScheduleControlScreen
 // ────────────────────────────────────────────────────────────────────────────────
 private val PrimaryBlue = Color(0xFF2962FF)
-private val LightCardOn = Color(0xFFE3F2FD)
 private val TurnOnAllColor = Color(0xFF43A047)
 private val TurnOffAllColor = Color(0xFFE65100)
 
@@ -95,52 +85,104 @@ private val relayInfoMap = mapOf(
 @Composable
 fun ManualControlScreen(viewModel: RelayViewModel) {
     val relayStates by viewModel.relayStates.collectAsState()
-
     val connectedDevices by remember(relayStates) {
         derivedStateOf { relayStates.count { it.value } }
     }
-
-    val listState = rememberLazyListState()
     val hapticFeedback = LocalHapticFeedback.current
 
-    Column(
+    // Ubah menjadi LazyColumn agar scrollable
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Spacer(Modifier.height(16.dp))
+        item { Spacer(Modifier.height(16.dp)) }
+        item {
+            HomeHeader(connectedDevices, relayStates.size)
+        }
+        item {
+            AllToggleButtons(
+                onTurnOnAll = {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                    viewModel.toggleAllRelay(true)
+                },
+                onTurnOffAll = {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                    viewModel.toggleAllRelay(false)
+                }
+            )
+        }
+        item {
+            RelayControlGroupCard(
+                relayStates = relayStates,
+                onToggle = { key, state ->
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    viewModel.toggleRelay(key, state)
+                }
+            )
+        }
+        item { Spacer(Modifier.height(16.dp)) }
+    }
+}
 
-        HomeHeader(connectedDevices, relayStates.size)
-
-        AllToggleButtons(
-            onTurnOnAll = {
-                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                viewModel.toggleAllRelay(true)
-            },
-            onTurnOffAll = {
-                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                viewModel.toggleAllRelay(false)
-            }
-        )
-
-        LazyColumn(
-            state = listState,
-            contentPadding = PaddingValues(vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.weight(1f)
-        ) {
-            items(relayStates.toList(), key = { it.first }) { (key, isOn) ->
+@Composable
+fun RelayControlGroupCard(
+    relayStates: Map<String, Boolean>,
+    onToggle: (String, Boolean) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(0.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column {
+            relayStates.toList().forEachIndexed { index, (key, isOn) ->
                 val relayData = relayInfoMap[key] ?: RelayInfo(key, Icons.Filled.Lightbulb, Icons.Outlined.Lightbulb)
-                RelayCardItem(
-                    name = relayData.name,
-                    isOn = isOn,
-                    activeIcon = relayData.activeIcon,
-                    inactiveIcon = relayData.inactiveIcon,
-                    onToggle = {
-                        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        viewModel.toggleRelay(key, it)
+                val textColor = if (isOn) PrimaryBlue else Color(0xFF424242)
+                val iconColor = if (isOn) PrimaryBlue else Color(0xFF757575)
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = if (isOn) relayData.activeIcon else relayData.inactiveIcon,
+                            contentDescription = relayData.name,
+                            tint = iconColor,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(Modifier.width(16.dp))
+                        Text(
+                            text = relayData.name,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = textColor
+                        )
                     }
-                )
+                    Switch(
+                        checked = isOn,
+                        onCheckedChange = { onToggle(key, it) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = ActiveThumbColor,
+                            checkedTrackColor = ActiveTrackColor,
+                            uncheckedThumbColor = InactiveThumbColor,
+                            uncheckedTrackColor = InactiveTrackColor
+                        )
+                    )
+                }
+
+                if (index != relayStates.size - 1) {
+                    androidx.compose.material3.Divider(
+                        color = Color(0xFFE0E0E0),
+                        thickness = 1.dp,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                }
             }
         }
     }
@@ -239,85 +281,6 @@ private fun ActionButton(label: String, background: Color, onClick: () -> Unit, 
                 color = Color.White,
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Medium
-            )
-        }
-    }
-}
-
-@Composable
-private fun RelayCardItem(
-    name: String,
-    isOn: Boolean,
-    activeIcon: ImageVector,
-    inactiveIcon: ImageVector,
-    onToggle: (Boolean) -> Unit
-) {
-    // Smooth animations with better easing
-    val switchScale by animateFloatAsState(
-        targetValue = if (isOn) 1.05f else 1f,
-        animationSpec = tween(250, easing = FastOutSlowInEasing),
-        label = "switchScaleAnim"
-    )
-
-    val cardColor by animateColorAsState(
-        targetValue = if (isOn) LightCardOn else Color.White,
-        animationSpec = tween(300, easing = FastOutSlowInEasing),
-        label = "cardColorAnim"
-    )
-
-    val textColor by animateColorAsState(
-        targetValue = if (isOn) PrimaryBlue else Color(0xFF424242),
-        animationSpec = tween(300),
-        label = "textColorAnim"
-    )
-
-    val iconColor by animateColorAsState(
-        targetValue = if (isOn) PrimaryBlue else Color(0xFF757575),
-        animationSpec = tween(300),
-        label = "iconColorAnim"
-    )
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = cardColor),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isOn) 2.dp else 1.dp
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = if (isOn) activeIcon else inactiveIcon,
-                    contentDescription = name,
-                    tint = iconColor,
-                    modifier = Modifier.size(26.dp)
-                )
-                Spacer(Modifier.width(16.dp))
-                Text(
-                    text = name,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = textColor,
-                    fontWeight = if (isOn) FontWeight.Medium else FontWeight.Normal
-                )
-            }
-
-            Switch(
-                checked = isOn,
-                onCheckedChange = { onToggle(it) },
-                modifier = Modifier.scale(switchScale),
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = ActiveThumbColor,
-                    checkedTrackColor = ActiveTrackColor,
-                    uncheckedThumbColor = InactiveThumbColor,
-                    uncheckedTrackColor = InactiveTrackColor
-                )
             )
         }
     }

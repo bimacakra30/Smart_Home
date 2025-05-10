@@ -22,9 +22,6 @@ import androidx.compose.ui.unit.sp
 import com.karebet.smarthome.model.RelayInfo
 import com.karebet.smarthome.model.RelayViewModel
 
-// ────────────────────────────────────────────────────────────────────────────────
-//  Color & Theme Definitions
-// ────────────────────────────────────────────────────────────────────────────────
 private val PrimaryGradient = listOf(Color(0xFF2962FF), Color(0xFF0D47A1))
 private val CardOverlay = Color(0xFFF5F9FF)
 private val OnTint = Color(0xFF43A047)
@@ -61,46 +58,28 @@ fun ScheduleControlScreen(viewModel: RelayViewModel, modifier: Modifier = Modifi
         Column(
             modifier = Modifier
                 .verticalScroll(rememberScrollState())
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            ElevatedCard(
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.elevatedCardColors(containerColor = CardOverlay)
+            // Header Card
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Brush.horizontalGradient(PrimaryGradient), RoundedCornerShape(16.dp))
+                    .padding(20.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Brush.horizontalGradient(PrimaryGradient))
-                        .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
-                        .padding(20.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Schedule, contentDescription = null, tint = Color.White, modifier = Modifier.size(30.dp))
-                            Spacer(Modifier.width(12.dp))
-                            Column {
-                                Text("Penjadwalan Otomatis", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                                Text("Aktifkan sesuai waktu tertentu", color = Color.White.copy(alpha = 0.85f), fontSize = 14.sp)
-                            }
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Schedule, contentDescription = null, tint = Color.White, modifier = Modifier.size(30.dp))
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text("Penjadwalan Otomatis", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                            Text("Aktifkan sesuai waktu tertentu", color = Color.White.copy(alpha = 0.85f), fontSize = 14.sp)
                         }
                     }
-                }
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                ) {
+                    Spacer(modifier = Modifier.height(20.dp))
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -114,7 +93,8 @@ fun ScheduleControlScreen(viewModel: RelayViewModel, modifier: Modifier = Modifi
                             Spacer(Modifier.width(12.dp))
                             Text(
                                 text = if (enabled) "Status: Aktif" else "Status: Nonaktif",
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                                color = Color.White
                             )
                         }
                         Switch(
@@ -132,63 +112,55 @@ fun ScheduleControlScreen(viewModel: RelayViewModel, modifier: Modifier = Modifi
                 }
             }
 
-            ElevatedCard(
-                shape = RoundedCornerShape(20.dp),
-                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+            // Time Settings Card
+            Column(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(CardOverlay)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Text(
-                        "Pengaturan Waktu",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF2962FF)
-                    )
-                    DisplayTimeRow("Waktu ON", onTime) { showOnPicker = true }
-                    DisplayTimeRow("Waktu OFF", offTime) { showOffPicker = true }
-                }
+                Text("Pengaturan Waktu", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Color(0xFF2962FF))
+                DisplayTimeRow("Waktu ON", onTime) { showOnPicker = true }
+                DisplayTimeRow("Waktu OFF", offTime) { showOffPicker = true }
             }
 
-            ElevatedCard(
-                shape = RoundedCornerShape(20.dp),
-                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+            // Relay Selection Card
+            Column(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(CardOverlay)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        "Pilih Relay untuk Dijadwalkan",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF2962FF)
-                    )
-                    relayInfoMap.forEach { (key, info) ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                info.activeIcon,
-                                contentDescription = info.name,
-                                tint = if (scheduleRelays[key] == true) Color(0xFF2962FF) else Color(0xFF9E9E9E),
-                                modifier = Modifier.size(24.dp)
+                Text("Pilih Relay untuk Dijadwalkan", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Color(0xFF2962FF))
+                relayInfoMap.forEach { (key, info) ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            info.activeIcon,
+                            contentDescription = info.name,
+                            tint = if (scheduleRelays[key] == true) Color(0xFF2962FF) else Color(0xFF9E9E9E),
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(Modifier.width(16.dp))
+                        Text(
+                            info.name,
+                            modifier = Modifier.weight(1f),
+                            fontWeight = if (scheduleRelays[key] == true) FontWeight.Medium else FontWeight.Normal
+                        )
+                        Switch(
+                            checked = scheduleRelays[key] == true,
+                            onCheckedChange = { viewModel.setRelayScheduled(key, it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = ActiveThumbColor,
+                                checkedTrackColor = ActiveTrackColor,
+                                uncheckedThumbColor = InactiveThumbColor,
+                                uncheckedTrackColor = InactiveTrackColor
                             )
-                            Spacer(Modifier.width(16.dp))
-                            Text(
-                                info.name,
-                                modifier = Modifier.weight(1f),
-                                fontWeight = if (scheduleRelays[key] == true) FontWeight.Medium else FontWeight.Normal
-                            )
-                            Switch(
-                                checked = scheduleRelays[key] == true,
-                                onCheckedChange = { viewModel.setRelayScheduled(key, it) },
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = ActiveThumbColor,
-                                    checkedTrackColor = ActiveTrackColor,
-                                    uncheckedThumbColor = InactiveThumbColor,
-                                    uncheckedTrackColor = InactiveTrackColor
-                                )
-                            )
-                        }
+                        )
                     }
                 }
             }
@@ -210,20 +182,17 @@ private fun DisplayTimeRow(label: String, value: String, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(CardOverlay)
+            .background(Color.White)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
-        )
+        Text(label, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium))
         AssistChip(
             onClick = onClick,
             label = { Text(value) },
             colors = AssistChipDefaults.assistChipColors(
-                containerColor = Color.White,
+                containerColor = Color(0xFFE3F2FD),
                 labelColor = Color(0xFF2962FF)
             )
         )
